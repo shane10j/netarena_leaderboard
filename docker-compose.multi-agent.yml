@@ -1,0 +1,56 @@
+# Optional local override for running the purple agent as a coordinator/planner/verifier system.
+# Use with:
+# docker compose -f docker-compose.yml -f docker-compose.multi-agent.yml up ...
+
+services:
+  planner-agent:
+    image: purple_agent_shane:latest
+    platform: linux/amd64
+    container_name: planner-agent
+    command: ["--host", "0.0.0.0", "--port", "9009", "--card-url", "http://planner-agent:9009", "--role", "planner"]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OPENAI_API_KEY=${NEBIUS}
+      - OPENAI_API_BASE=https://api.tokenfactory.nebius.com/v1/
+      - MODEL_NAME=openai/openai/gpt-oss-120b
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9009/.well-known/agent-card.json"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    networks:
+      - agent-network
+
+  verifier-agent:
+    image: purple_agent_shane:latest
+    platform: linux/amd64
+    container_name: verifier-agent
+    command: ["--host", "0.0.0.0", "--port", "9009", "--card-url", "http://verifier-agent:9009", "--role", "verifier"]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OPENAI_API_KEY=${NEBIUS}
+      - OPENAI_API_BASE=https://api.tokenfactory.nebius.com/v1/
+      - MODEL_NAME=openai/openai/gpt-oss-120b
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9009/.well-known/agent-card.json"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    networks:
+      - agent-network
+
+  malt_operator:
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OPENAI_API_KEY=${NEBIUS}
+      - OPENAI_API_BASE=https://api.tokenfactory.nebius.com/v1/
+      - MODEL_NAME=openai/openai/gpt-oss-120b
+      - PLANNER_AGENT_URL=http://planner-agent:9009
+      - VERIFIER_AGENT_URL=http://verifier-agent:9009
+    depends_on:
+      planner-agent:
+        condition: service_healthy
+      verifier-agent:
+        condition: service_healthy
