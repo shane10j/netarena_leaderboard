@@ -13,7 +13,7 @@ env = { OPENAI_API_KEY = "${NEBIUS}", OPENAI_API_BASE = "https://api.tokenfactor
 prompt_type = "zeroshot_base" 
 
 # Levels of complexity to generate queries for. Available options: "level1", "level2", "level3".
-complexity_level = ["level1", "level2"]
+complexity_level = ["level1", "level2", "level3"]
 
 # Number of queries to generate for each level of complexity (4 for level1, 3 for level2 and level3).
 num_queries = 1 
