@@ -1,45 +1,49 @@
-# Optional local override for running the purple agent as a coordinator/planner/verifier system.
+# Optional local override for running the purple agent as a typed multi-agent pipeline.
 # Use with:
 # docker compose -f docker-compose.yml -f docker-compose.multi-agent.yml up ...
 
+x-purple-common: &purple-common
+  image: purple_agent_shane:latest
+  platform: linux/amd64
+  environment:
+    - PYTHONUNBUFFERED=1
+    - OPENAI_API_KEY=${NEBIUS}
+    - OPENAI_API_BASE=https://api.tokenfactory.nebius.com/v1/
+    - MODEL_NAME=openai/openai/gpt-oss-120b
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:9009/.well-known/agent-card.json"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+    start_period: 30s
+  networks:
+    - agent-network
+
 services:
   planner-agent:
-    image: purple_agent_shane:latest
-    platform: linux/amd64
+    <<: *purple-common
     container_name: planner-agent
     command: ["--host", "0.0.0.0", "--port", "9009", "--card-url", "http://planner-agent:9009", "--role", "planner"]
-    environment:
-      - PYTHONUNBUFFERED=1
-      - OPENAI_API_KEY=${NEBIUS}
-      - OPENAI_API_BASE=https://api.tokenfactory.nebius.com/v1/
-      - MODEL_NAME=openai/openai/gpt-oss-120b
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9009/.well-known/agent-card.json"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 30s
-    networks:
-      - agent-network
 
-  verifier-agent:
-    image: purple_agent_shane:latest
-    platform: linux/amd64
-    container_name: verifier-agent
-    command: ["--host", "0.0.0.0", "--port", "9009", "--card-url", "http://verifier-agent:9009", "--role", "verifier"]
-    environment:
-      - PYTHONUNBUFFERED=1
-      - OPENAI_API_KEY=${NEBIUS}
-      - OPENAI_API_BASE=https://api.tokenfactory.nebius.com/v1/
-      - MODEL_NAME=openai/openai/gpt-oss-120b
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9009/.well-known/agent-card.json"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 30s
-    networks:
-      - agent-network
+  coder-agent:
+    <<: *purple-common
+    container_name: coder-agent
+    command: ["--host", "0.0.0.0", "--port", "9009", "--card-url", "http://coder-agent:9009", "--role", "graph_programmer"]
+
+  safety-agent:
+    <<: *purple-common
+    container_name: safety-agent
+    command: ["--host", "0.0.0.0", "--port", "9009", "--card-url", "http://safety-agent:9009", "--role", "safety_auditor"]
+
+  repair-agent:
+    <<: *purple-common
+    container_name: repair-agent
+    command: ["--host", "0.0.0.0", "--port", "9009", "--card-url", "http://repair-agent:9009", "--role", "repair_agent"]
+
+  final-verifier-agent:
+    <<: *purple-common
+    container_name: final-verifier-agent
+    command: ["--host", "0.0.0.0", "--port", "9009", "--card-url", "http://final-verifier-agent:9009", "--role", "final_verifier"]
 
   malt_operator:
     environment:
@@ -48,9 +52,18 @@ services:
       - OPENAI_API_BASE=https://api.tokenfactory.nebius.com/v1/
       - MODEL_NAME=openai/openai/gpt-oss-120b
       - PLANNER_AGENT_URL=http://planner-agent:9009
-      - VERIFIER_AGENT_URL=http://verifier-agent:9009
+      - CODER_AGENT_URL=http://coder-agent:9009
+      - SAFETY_AGENT_URL=http://safety-agent:9009
+      - REPAIR_AGENT_URL=http://repair-agent:9009
+      - FINAL_VERIFIER_AGENT_URL=http://final-verifier-agent:9009
     depends_on:
       planner-agent:
         condition: service_healthy
-      verifier-agent:
+      coder-agent:
+        condition: service_healthy
+      safety-agent:
+        condition: service_healthy
+      repair-agent:
+        condition: service_healthy
+      final-verifier-agent:
         condition: service_healthy
