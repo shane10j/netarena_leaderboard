@@ -7,6 +7,10 @@ env = { LOG_LEVEL = "INFO" }
 image = "purple_agent_shane:latest"
 name = "malt_operator"
 env = { OPENAI_API_KEY = "${NEBIUS}", OPENAI_API_BASE = "https://api.tokenfactory.nebius.com/v1/", MODEL_NAME = "openai/google/gemma-2-2b-it" }
+#env = { OPENAI_API_KEY = "${NEBIUS}", OPENAI_API_BASE = "https://api.tokenfactory.nebius.com/v1/", MODEL_NAME = "openai/Qwen/Qwen3-Next-80B-A3B-Thinking" }
+# env = { OPENAI_API_KEY = "${NEBIUS}", OPENAI_API_BASE = "https://api.tokenfactory.nebius.com/v1/", MODEL_NAME = "openai/openai/gpt-oss-120b" }
+
+
 
 [config]
 # Prompt strategy for the agent. Options: "zeroshot_base", "zeroshot_cot", "fewshot_base", "fewshot_cot"
